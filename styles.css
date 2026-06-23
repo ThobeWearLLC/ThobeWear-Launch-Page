@@ -1,0 +1,276 @@
+/* =========================================================
+   ThobeWear — Pre-Launch Landing
+   Design language: quiet luxury, modest heritage
+   --------------------------------------------------------- */
+
+:root {
+  /* Core palette */
+  --obsidian:   #0a0a0b;   /* near-black ground */
+  --onyx:       #141416;   /* raised surface */
+  --ivory:      #f5efe6;   /* warm cream text */
+  --sand:       #cbb9a3;   /* muted desert neutral */
+  --champagne:  #c9a24b;   /* signature gold */
+  --champagne-2:#e7cf95;   /* gold highlight */
+  --muted:      #8a8378;   /* secondary text */
+
+  --maxw: 760px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  min-height: 100svh;
+  background: var(--obsidian);
+  color: var(--ivory);
+  font-family: "Jost", system-ui, -apple-system, sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* --- Three.js canvas + vignette ------------------------- */
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 18%, transparent 35%, rgba(10,10,11,0.55) 78%, rgba(10,10,11,0.92) 100%),
+    linear-gradient(180deg, rgba(10,10,11,0.35) 0%, transparent 30%, transparent 60%, rgba(10,10,11,0.85) 100%);
+}
+
+/* --- Layout --------------------------------------------- */
+.stage {
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: clamp(1.75rem, 5vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+/* --- Brand lockup --------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  animation: rise 1s var(--ease) both;
+}
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--champagne);
+  color: var(--champagne);
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+.brand__name {
+  font-family: "Jost", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  color: var(--ivory);
+  padding-left: 0.42em; /* optical balance for tracking */
+}
+
+/* --- Hero ----------------------------------------------- */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  padding: 3rem 0;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--sand);
+  animation: rise 1s var(--ease) 0.1s both;
+}
+
+.headline {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-size: clamp(2.9rem, 11vw, 5.4rem);
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  animation: rise 1.1s var(--ease) 0.2s both;
+}
+.headline em {
+  font-style: italic;
+  font-weight: 400;
+  background: linear-gradient(100deg, var(--champagne-2), var(--champagne) 55%, #9c7a2e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subhead {
+  max-width: 38ch;
+  color: var(--sand);
+  font-size: clamp(1rem, 2.4vw, 1.12rem);
+  font-weight: 300;
+  animation: rise 1.1s var(--ease) 0.32s both;
+}
+
+/* --- Signup form ---------------------------------------- */
+.signup {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  width: min(100%, 480px);
+  background: rgba(20, 20, 22, 0.55);
+  border: 1px solid rgba(203, 185, 163, 0.22);
+  border-radius: 2px;
+  padding: 0.4rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: rise 1.1s var(--ease) 0.44s both;
+  transition: border-color 0.4s var(--ease);
+}
+.signup:focus-within { border-color: rgba(201, 162, 75, 0.6); }
+
+.signup input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ivory);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  padding: 0.75rem 0.85rem;
+}
+.signup input::placeholder { color: var(--muted); }
+
+.signup button {
+  flex: none;
+  cursor: pointer;
+  border: none;
+  border-radius: 2px;
+  padding: 0.75rem 1.4rem;
+  font-family: "Jost", sans-serif;
+  font-weight: 500;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--obsidian);
+  background: linear-gradient(100deg, var(--champagne-2), var(--champagne));
+  transition: transform 0.3s var(--ease), filter 0.3s var(--ease);
+}
+.signup button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.signup button:active { transform: translateY(0); }
+.signup.is-done button { background: var(--sand); }
+
+.signup__note {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  animation: rise 1.1s var(--ease) 0.54s both;
+  min-height: 1.2em;
+}
+.signup__note.is-success { color: var(--champagne-2); }
+.signup__note.is-error   { color: #d98c6a; }
+
+/* --- Footer --------------------------------------------- */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 2rem;
+  animation: rise 1.1s var(--ease) 0.66s both;
+}
+.countdown {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--sand);
+}
+.countdown b { color: var(--champagne-2); font-weight: 600; }
+
+.social {
+  display: flex;
+  gap: 1.6rem;
+}
+.social a {
+  color: var(--sand);
+  text-decoration: none;
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  position: relative;
+  padding-bottom: 3px;
+  transition: color 0.3s var(--ease);
+}
+.social a::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 0; height: 1px;
+  background: var(--champagne);
+  transition: width 0.35s var(--ease);
+}
+.social a:hover { color: var(--ivory); }
+.social a:hover::after { width: 100%; }
+
+.copy {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* --- Utilities ------------------------------------------ */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}
+
+@media (max-width: 540px) {
+  .signup { flex-direction: column; }
+  .signup button { padding: 0.85rem; }
+}
