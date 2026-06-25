@@ -28,6 +28,7 @@
   --accent:    var(--champagne);
   --accent-2:  var(--champagne-2);
   --logo-mask: url("assets/logo-dark.png");
+  --glare-hi:  #fff6df;   /* white-gold highlight pops on black */
 }
 
 /* ---- LIGHT theme (warm gallery ivory) ------------------- */
@@ -43,6 +44,7 @@
   --accent:    var(--champagne-deep);
   --accent-2:  var(--champagne);
   --logo-mask: url("assets/logo-light.png");
+  --glare-hi:  #e8c25c;   /* bright gold (not white) stays legible on cream */
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -241,12 +243,13 @@ body {
 }
 
 .eyebrow {
-  font-size: 0.72rem;
-  letter-spacing: 0.32em;
+  font-size: clamp(0.9rem, 2.1vw, 1.1rem);
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--text-soft);
   animation: rise 1s var(--ease) 0.1s both;
 }
+.eyebrow .glare-text { letter-spacing: inherit; font-weight: 500; }
 
 .headline {
   font-family: "Cormorant Garamond", serif;
@@ -257,19 +260,21 @@ body {
   animation: rise 1.1s var(--ease) 0.2s both;
 }
 .headline em {
-  display: inline-block;   /* clean box so the tiled gradient seams align */
   font-style: italic;
   font-weight: 400;
-  /* Glare synced to the logo: same duration + same sweep-then-rest
-     rhythm (sweep 0-88%, idle 88-100%). A 90deg gradient with uniform
-     gold ends tiles seamlessly; background-size 300% means one tile is
-     a 150% position shift, so the held end state equals the start and
-     the loop never jumps. */
+}
+
+/* Reusable gold glare for text. Shares the same @keyframes glare, duration
+   and rhythm as the logo, so every glare on the page sweeps in unison.
+   A 90deg gradient with uniform gold ends tiles seamlessly; background-size
+   300% means one tile is a 150% shift, so the loop never jumps. */
+.glare-text {
+  display: inline-block;   /* clean box so the tiled gradient seams align */
   background: linear-gradient(
     90deg,
     var(--accent) 0%,
     var(--accent) 43%,
-    #fff6df 50%,
+    var(--glare-hi) 50%,
     var(--accent-2) 54%,
     var(--accent) 61%,
     var(--accent) 100%
@@ -279,7 +284,7 @@ body {
   background-clip: text;
   color: transparent;
   will-change: background-position;
-  animation: glare var(--shine-duration) linear infinite;   /* shared keyframe */
+  animation: glare var(--shine-duration) linear infinite;
 }
 
 .subhead {

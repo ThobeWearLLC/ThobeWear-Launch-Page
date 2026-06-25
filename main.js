@@ -38,12 +38,12 @@ const THEME = {
   light: {
     logo: "assets/logo-light.png",
     fog: 0xf4ede1,
-    colorLow: 0x5e4514,          // deep bronze — reads against cream
-    colorHigh: 0x8c6817,         // rich gold even at the bright twinkle
+    colorLow: 0x9a6f1c,          // warm bronze — clearly gold against cream
+    colorHigh: 0xc99a30,         // rich gold at the bright twinkle
     blending: "normal",
     alpha: 1.0,
-    glint: -0.14,                // darken the core for contrast on a light bg
-    flare: [-0.22, -0.18, -0.09],// cursor wake deepens the gold instead of lifting it
+    glint: 0.0,                  // no core darkening (that turned them near-black)
+    flare: [0.06, 0.04, 0.0],    // cursor wake gently warms the gold
   },
 };
 
@@ -428,19 +428,8 @@ async function submitEmail(email) {
   return new Promise((r) => setTimeout(r, 500));
 }
 
-/* ===========================================================
-   5. UNVEILING LINE  (anticipation, not pressure)
-   No official date yet — show a soft season instead of a clock.
-   =========================================================== */
-function initCountdown() {
-  const el = $("#countdown");
-  if (!el) return;
-  el.innerHTML = "Unveiling <b>Late 2026</b>";
-}
-
 /* ---------- boot ---------------------------------------- */
 initTheme();      // theme + logo first — never depends on 3D
 initSignup();
-initCountdown();
 initCursor();     // mouse-only, motion-safe
 initScene();      // async, decorative, isolated failure
