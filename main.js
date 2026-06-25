@@ -114,7 +114,7 @@ async function initScene() {
       uColorLow: { value: new THREE.Color(0x6e5a2e) },
       uColorHigh: { value: new THREE.Color(0xe7cf95) },
       uAlpha: { value: 0.95 },
-      uSize: { value: 18.0 * Math.min(window.devicePixelRatio, 2) },
+      uSize: { value: 25.0 * Math.min(window.devicePixelRatio, 2) },
       uCursor: { value: new THREE.Vector2(0, 0) },   // pointer in NDC (-1..1)
       uCursorActive: { value: 0 },                    // fades in/out with motion
       uAspect: { value: 1 },
