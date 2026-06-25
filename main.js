@@ -412,38 +412,51 @@ function initSignup() {
 }
 
 /* ----- Kit (ConvertKit) waitlist ----------------------------------------
-   Fill in BOTH values from your Kit account, then signups flow straight in:
+   Values from your Kit account:
    - KIT_API_KEY: Kit → Settings → Advanced → "API Key" (the public key; safe
      to expose in client code — it is NOT the secret API Secret).
-   - KIT_FORM_ID: open the form you want; the number in the editor URL
-     (e.g. app.kit.com/forms/designers/<FORM_ID>/edit) or Form → Settings.
-   Until both are filled, signups are kept in the browser as a fallback so the
-   form still confirms. The endpoint supports CORS, so a plain fetch works. */
-const KIT_API_KEY = "";   // e.g. "0aBcD1EfGhIjKlMnOpQrSt"
-const KIT_FORM_ID = "";   // e.g. "7654321"
+   - KIT_FORM_ID: the number in the form editor URL
+     (e.g. app.kit.com/forms/designers/<FORM_ID>/edit).
+   If either is blank, signups are kept only in the browser as a fallback. */
+const KIT_API_KEY = "9II37xp8cQ3m7r2_0vfROA";
+const KIT_FORM_ID = "9608878";
 
 async function submitEmail(email) {
-  if (KIT_API_KEY && KIT_FORM_ID) return kitSubscribe(email);
-
-  // Fallback before Kit is configured: remember locally so the form still
-  // confirms to the user (nothing is lost).
+  // Always keep a local backup first, so an email is never lost even if the
+  // network request below fails for any reason.
   const list = JSON.parse(localStorage.getItem("tw_waitlist") || "[]");
   if (!list.includes(email)) list.push(email);
   localStorage.setItem("tw_waitlist", JSON.stringify(list));
-  return new Promise((r) => setTimeout(r, 400));
+
+  if (KIT_API_KEY && KIT_FORM_ID) return kitSubscribe(email);
+  return new Promise((r) => setTimeout(r, 300));
 }
 
-async function kitSubscribe(email) {
-  const res = await fetch(
-    `https://api.convertkit.com/v3/forms/${KIT_FORM_ID}/subscribe`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: KIT_API_KEY, email }),
-    }
-  );
-  if (!res.ok) throw new Error("subscribe failed");
-  return res.json(); // { subscription: { ... } }
+/* Kit's API doesn't return CORS headers, so the browser can't read the
+   response. We send a "simple" request (urlencoded body, no custom headers =>
+   no CORS preflight) in no-cors mode: Kit records the subscriber, but the
+   response is opaque, so there's nothing to wait on or act on. We fire it and
+   resolve right away — the localStorage backup above is the safety net, and
+   we cap the request so a slow network can never leave it dangling. */
+function kitSubscribe(email) {
+  const body =
+    "api_key=" + encodeURIComponent(KIT_API_KEY) +
+    "&email=" + encodeURIComponent(email);
+
+  const ctrl = new AbortController();
+  const cap = setTimeout(() => ctrl.abort(), 8000);
+  fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_ID}/subscribe`, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    signal: ctrl.signal,
+    keepalive: true, // let it finish even if the page is navigating away
+  })
+    .catch(() => {}) // opaque/failed: nothing to act on; backup covers it
+    .finally(() => clearTimeout(cap));
+
+  return Promise.resolve(); // confirm to the user immediately
 }
 
 /* ---------- boot ---------------------------------------- */
