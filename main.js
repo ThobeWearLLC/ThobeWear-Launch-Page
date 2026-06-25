@@ -1,27 +1,66 @@
 /* =========================================================
-   ThobeWear — Three.js backdrop + interactions
+   ThobeWear — Three.js backdrop + interactions + theming
    A slow, flowing "silk in low light" particle field with a
-   warm gold sheen. Lightweight, GPU-friendly, and respectful
-   of reduced-motion preferences.
+   warm gold sheen. Lightweight, GPU-friendly, theme-aware,
+   and respectful of reduced-motion preferences.
    --------------------------------------------------------- */
 
-import * as THREE from "three";
+/* Three.js is imported dynamically inside initScene() so that a missing
+   or slow module can never take down the theme toggle, signup, or
+   countdown. THREE is assigned once the module resolves. */
+let THREE = null;
 
 /* ---------- small helpers ------------------------------- */
 const $ = (sel) => document.querySelector(sel);
 const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const root = document.documentElement;
 
 /* Fill in the year placeholders */
 document.querySelectorAll("[data-year]").forEach((el) => {
   el.textContent = new Date().getFullYear();
 });
 
+/* Per-theme look for the page chrome + the 3D field.
+   Additive blending glows beautifully on black but washes out
+   on a light page, so light mode switches to normal blending
+   with deeper gold so the silk still reads. */
+const THEME = {
+  dark: {
+    logo: "assets/logo-dark.png",
+    fog: 0x0a0a0b,
+    colorLow: 0x6e5a2e,
+    colorHigh: 0xe7cf95,
+    blending: "additive",
+    alpha: 0.55,
+  },
+  light: {
+    logo: "assets/logo-light.png",
+    fog: 0xf4ede1,
+    colorLow: 0x9c7a2e,
+    colorHigh: 0xbf8f33,
+    blending: "normal",
+    alpha: 0.5,
+  },
+};
+
+/* References shared between the scene and the theme switcher */
+let sceneRefs = null;
+let currentTheme = "dark";
+
 /* ===========================================================
    1. THREE.JS SILK FIELD
    =========================================================== */
-function initScene() {
+async function initScene() {
   const canvas = $("#scene");
   if (!canvas) return;
+
+  try {
+    THREE = await import("three");
+  } catch (e) {
+    // 3D is purely decorative — the page is fully usable without it.
+    console.warn("ThobeWear: 3D backdrop unavailable —", e && e.message);
+    return;
+  }
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -68,8 +107,9 @@ function initScene() {
     blending: THREE.AdditiveBlending,
     uniforms: {
       uTime: { value: 0 },
-      uColorLow: { value: new THREE.Color(0x6e5a2e) },   // shadowed gold
-      uColorHigh: { value: new THREE.Color(0xe7cf95) },  // champagne highlight
+      uColorLow: { value: new THREE.Color(0x6e5a2e) },
+      uColorHigh: { value: new THREE.Color(0xe7cf95) },
+      uAlpha: { value: 0.55 },
       uSize: { value: 14.0 * Math.min(window.devicePixelRatio, 2) },
     },
     vertexShader: /* glsl */ `
@@ -99,14 +139,14 @@ function initScene() {
     fragmentShader: /* glsl */ `
       uniform vec3 uColorLow;
       uniform vec3 uColorHigh;
+      uniform float uAlpha;
       varying float vGlow;
 
       void main() {
         // soft round falloff
         vec2 c = gl_PointCoord - 0.5;
         float d = length(c);
-        float alpha = smoothstep(0.5, 0.0, d);
-        alpha *= 0.55;
+        float alpha = smoothstep(0.5, 0.0, d) * uAlpha;
 
         vec3 col = mix(uColorLow, uColorHigh, smoothstep(0.2, 1.0, vGlow));
         gl_FragColor = vec4(col, alpha);
@@ -144,7 +184,6 @@ function initScene() {
     const t = clock.getElapsedTime();
     material.uniforms.uTime.value = t;
 
-    // ease camera toward parallax target
     current.x += (target.x - current.x) * 0.04;
     current.y += (target.y - current.y) * 0.04;
     camera.position.x = current.x;
@@ -155,8 +194,12 @@ function initScene() {
     if (!prefersReduced) requestAnimationFrame(render);
   }
 
+  sceneRefs = { scene, material, renderer, camera, render, redraw: () => renderer.render(scene, camera) };
+
+  // the scene may finish loading after the theme was chosen — sync it now
+  applySceneTheme(currentTheme);
+
   if (prefersReduced) {
-    // draw a single static frame for reduced-motion users
     material.uniforms.uTime.value = 1.2;
     renderer.render(scene, camera);
   } else {
@@ -164,8 +207,65 @@ function initScene() {
   }
 }
 
+/* Apply a theme's palette to the live 3D scene */
+function applySceneTheme(name) {
+  if (!sceneRefs || !THREE) return;
+  const t = THEME[name] || THEME.dark;
+  const { scene, material } = sceneRefs;
+
+  scene.fog.color.setHex(t.fog);
+  material.uniforms.uColorLow.value.setHex(t.colorLow);
+  material.uniforms.uColorHigh.value.setHex(t.colorHigh);
+  material.uniforms.uAlpha.value = t.alpha;
+  material.blending = t.blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending;
+  material.needsUpdate = true;
+
+  // static-frame users need an explicit redraw
+  if (prefersReduced) sceneRefs.redraw();
+}
+
 /* ===========================================================
-   2. PRE-LAUNCH SIGNUP
+   2. THEME TOGGLE (light / dark)
+   The initial theme is set pre-paint by the inline <head>
+   script; here we wire the button and keep the scene + logo
+   in sync.
+   =========================================================== */
+function initTheme() {
+  const btn = $("#themeToggle");
+  const logo = $("#brandLogo");
+
+  function apply(name, persist) {
+    currentTheme = name;
+    root.setAttribute("data-theme", name);
+    if (logo && !logo.classList.contains("is-missing")) {
+      logo.src = THEME[name].logo;
+    }
+    applySceneTheme(name);
+    if (persist) {
+      try { localStorage.setItem("tw_theme", name); } catch (e) {}
+    }
+  }
+
+  // sync scene + logo to whatever the inline script chose
+  apply(root.getAttribute("data-theme") || "dark", false);
+
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      apply(next, true);
+    });
+  }
+
+  // follow the OS if the user hasn't explicitly chosen
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (e) => {
+    let chosen = null;
+    try { chosen = localStorage.getItem("tw_theme"); } catch (err) {}
+    if (!chosen) apply(e.matches ? "light" : "dark", false);
+  });
+}
+
+/* ===========================================================
+   3. PRE-LAUNCH SIGNUP
    For now this validates + stores locally and shows a graceful
    confirmation. Wire `submitEmail()` to your provider (Formspree,
    Mailchimp, Beehiiv, ConvertKit…) when ready — see README.
@@ -223,8 +323,7 @@ async function submitEmail(email) {
 }
 
 /* ===========================================================
-   3. SOFT COUNTDOWN  (anticipation, not pressure)
-   Set your real launch date below.
+   4. SOFT COUNTDOWN  (anticipation, not pressure)
    =========================================================== */
 function initCountdown() {
   const el = $("#countdown");
@@ -247,6 +346,7 @@ function initCountdown() {
 }
 
 /* ---------- boot ---------------------------------------- */
-initScene();
+initTheme();      // theme + logo first — never depends on 3D
 initSignup();
 initCountdown();
+initScene();      // async, decorative, isolated failure

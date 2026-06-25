@@ -35,12 +35,26 @@ modest-menswear house. Built to be hosted on **GitHub Pages** at
 
 | File | Purpose |
 |---|---|
-| `index.html` | Page structure, meta/OG tags, signup form |
-| `styles.css` | Full design system (palette, type, layout, animation) |
-| `main.js` | Three.js backdrop, signup logic, soft countdown |
+| `index.html` | Page structure, meta/OG tags, theme toggle, signup form |
+| `styles.css` | Full design system + **light/dark themes** (`data-theme`) |
+| `main.js` | Three.js backdrop, theme engine, signup logic, countdown |
 | `404.html` | On-brand not-found page (auto-redirects home) |
+| `og-image.jpg` | 1200×630 social-share preview (generated from the logo) |
+| `assets/logo-dark.png` | Logo for **dark** mode (light artwork, transparent) |
+| `assets/logo-light.png` | Logo for **light** mode (dark artwork, transparent) |
+| `assets/favicon.png` | Browser-tab icon (the kufic monogram) |
+| `assets/three.module.js` | Three.js r160, **vendored locally** (no CDN dependency) |
 | `CNAME` | Custom domain for GitHub Pages (`www.thobewear.com`) |
 | `.nojekyll` | Tells Pages to serve files as-is (no Jekyll processing) |
+
+### Light & dark mode
+
+The page ships with both themes. It defaults to the visitor's system
+preference, remembers their manual choice (toggle, top-right) in
+`localStorage`, and swaps **both** the palette and the logo. The Three.js
+backdrop also re-tints and switches blending so the silk reads correctly on
+either background. To replace a logo, drop a transparent PNG over the matching
+file in `assets/` — no code changes needed.
 
 ---
 
