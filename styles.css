@@ -311,6 +311,7 @@ body {
   transition: border-color 0.4s var(--ease), background-color 0.6s var(--ease);
 }
 .signup:focus-within { border-color: var(--border-strong); }
+.signup[hidden] { display: none; } /* class display would otherwise win over [hidden] */
 
 .signup input {
   flex: 1;
@@ -361,6 +362,64 @@ body {
 }
 .signup__note.is-success { color: var(--accent); }
 .signup__note.is-error   { color: #c9683f; }
+
+/* Prominent post-signup confirmation (replaces the form on success) */
+.signup-done {
+  width: min(100%, 480px);
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.7rem;
+  padding: 1.7rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px -28px rgba(201, 162, 75, 0.55);
+  animation: doneIn 0.7s var(--ease) both;
+}
+.signup-done[hidden] { display: none; }
+.signup-done__check {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: #14110a;
+  background: linear-gradient(100deg, var(--champagne-2), var(--champagne));
+  box-shadow: 0 0 0 7px rgba(201, 162, 75, 0.16);
+  animation: checkPop 0.5s var(--ease) 0.18s both;
+}
+.signup-done__check svg { width: 30px; height: 30px; }
+.signup-done__title {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+.signup-done__sub {
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 40ch;
+}
+@keyframes doneIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes checkPop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signup-done, .signup-done__check { animation: none; }
+}
 
 /* --- Footer --------------------------------------------- */
 .footer {

@@ -399,11 +399,19 @@ function initSignup() {
 
     try {
       await submitEmail(email);
-      form.classList.add("is-done");
       input.value = "";
-      input.disabled = true;
-      note.textContent = "You're on the list. We'll be in touch privately.";
-      note.classList.add("is-success");
+      // Swap the form for a prominent confirmation card.
+      form.hidden = true;
+      note.hidden = true;
+      const done = $("#signupDone");
+      if (done) {
+        done.hidden = false;
+      } else {
+        // Fallback if the card markup isn't present.
+        note.textContent = "You're on the list — check your inbox (and spam) to confirm.";
+        note.classList.add("is-success");
+        note.hidden = false;
+      }
     } catch (err) {
       note.textContent = "Something went wrong — please try again shortly.";
       note.classList.add("is-error");
