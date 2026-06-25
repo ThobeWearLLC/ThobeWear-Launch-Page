@@ -252,31 +252,35 @@ body {
   animation: rise 1.1s var(--ease) 0.2s both;
 }
 .headline em {
+  display: inline-block;   /* clean box so the tiled gradient seams align */
   font-style: italic;
   font-weight: 400;
-  /* Uniform gold base with a single white highlight band. Keeping the
-     base uniform means the loop wraps over flat colour — no visible
-     "cut" — and the highlight simply sweeps across smoothly. */
+  /* Seamless looping shine. Two requirements:
+     1) a 90deg (pure horizontal) gradient so repeated tiles align
+        perfectly at every seam, and identical end colours (accent),
+     2) background-size 200% + a 100% → -100% sweep, which travels
+        EXACTLY one tile width, so the loop wraps with no jump. */
   background: linear-gradient(
-    100deg,
+    90deg,
     var(--accent) 0%,
-    var(--accent) 42%,
+    var(--accent) 38%,
     #fff6df 50%,
-    var(--accent-2) 56%,
-    var(--accent) 64%,
+    var(--accent-2) 58%,
+    var(--accent) 70%,
     var(--accent) 100%
   );
-  background-size: 250% auto;
+  background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  will-change: background-position;
   animation: text-shine 6s linear infinite;
 }
 
-/* explicit, equal vertical (center) on both ends → no vertical hitch */
+/* move exactly one tile (200%) → invisible wrap */
 @keyframes text-shine {
-  from { background-position: 125% center; }
-  to   { background-position: -125% center; }
+  from { background-position: 100% center; }
+  to   { background-position: -100% center; }
 }
 
 .subhead {
