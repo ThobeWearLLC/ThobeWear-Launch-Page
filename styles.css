@@ -117,12 +117,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  min-height: 40px;
+  min-height: 64px;
 }
 .brand__logo {
-  height: 40px;
+  height: clamp(56px, 8vw, 76px);
   width: auto;
-  max-width: 200px;
+  max-width: 280px;
   object-fit: contain;
   display: block;
 }
