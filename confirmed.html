@@ -4,16 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0a0a" />
+  <meta name="robots" content="noindex" />
 
-  <title>ThobeWear — Modern Heritage, Tailored in Silence</title>
-  <meta name="description" content="ThobeWear is a luxury modest-menswear house redefining the thobe. A new standard in quiet luxury arrives soon. Join the private list." />
-
-  <!-- Open Graph / social preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="ThobeWear — Coming Soon" />
-  <meta property="og:description" content="Luxury redefined for the modern man. The thobe, reimagined. Join the private list." />
-  <meta property="og:image" content="og-image.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
+  <title>You&rsquo;re Confirmed — ThobeWear</title>
+  <meta name="description" content="You're confirmed and on the ThobeWear private list. First access to the collection when we unveil." />
 
   <link rel="icon" type="image/png" href="assets/favicon.png?v=3" />
 
@@ -53,8 +47,6 @@
   <main class="stage">
     <header class="topbar">
       <div class="brand">
-        <!-- Logo image swaps with theme; a masked sheen sweeps across it.
-             Falls back to the text lockup until the PNGs are in /assets -->
         <span class="brand__logo-wrap">
           <img
             class="brand__logo"
@@ -72,12 +64,10 @@
 
       <button class="theme-toggle" id="themeToggle" type="button"
               aria-label="Switch between light and dark mode" title="Toggle theme">
-        <!-- moon (shown in dark mode) -->
         <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
         </svg>
-        <!-- sun (shown in light mode) -->
         <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="4" />
@@ -87,59 +77,28 @@
     </header>
 
     <section class="hero">
-      <p class="eyebrow">Unveiling <span class="glare-text">Late 2026</span></p>
+      <p class="eyebrow">The <span class="glare-text">Private List</span></p>
 
-      <h1 class="headline">
-        The Thobe,<br />
-        <em class="glare-text">Reimagined.</em>
-      </h1>
-
-      <p class="subhead">
-        Heritage tailoring, woven for the modern man. A quiet kind of luxury —
-        considered cloth, clean lines, and the dignity of restraint.
-      </p>
-
-      <!-- Pre-launch signup -->
-      <form class="signup" id="signup" novalidate>
-        <label class="visually-hidden" for="email">Email address</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          placeholder="Enter your email for first access"
-          required
-        />
-        <button type="submit">
-          <span>Join the List</span>
-        </button>
-      </form>
-      <p class="signup__note" id="formNote" role="status">
-        Be among the first. Private previews, no noise.
-      </p>
-
-      <!-- Revealed on successful signup -->
-      <div class="signup-done" id="signupDone" role="status" aria-live="polite" hidden>
+      <div class="signup-done" role="status">
         <span class="signup-done__check" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 6L9 17l-5-5" />
           </svg>
         </span>
-        <p class="signup-done__title">You&rsquo;re on the list.</p>
+        <p class="signup-done__title">You&rsquo;re confirmed.</p>
         <p class="signup-done__sub">
-          We just sent a note to confirm you&rsquo;re in &mdash; check your inbox.
-          If it&rsquo;s not there in a minute, peek in your spam or promotions folder
-          and mark us as &ldquo;not spam&rdquo; so you don&rsquo;t miss the launch.
+          Welcome to the ThobeWear inner circle. You&rsquo;ll be among the first to
+          see the collection when we unveil &mdash; watch your inbox, and add us to
+          your contacts so nothing slips into spam.
         </p>
       </div>
+
+      <a class="backlink" href="/">Return to thobewear.com</a>
     </section>
 
     <footer class="footer">
       <nav class="social" aria-label="Social links">
-        <!-- Inert until the accounts exist. To activate, swap each <span>
-             for: <a href="https://instagram.com/HANDLE" target="_blank" rel="noopener">Instagram</a> -->
         <span class="social-soon" title="Coming soon">Instagram</span>
         <span class="social-soon" title="Coming soon">TikTok</span>
         <a href="mailto:contact@thobewear.com">Contact</a>
