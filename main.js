@@ -411,21 +411,56 @@ function initSignup() {
   });
 }
 
-/* Default no-backend handler: remembers the signup in the browser.
-   Replace the body with a fetch() to your email provider. */
-async function submitEmail(email) {
-  // --- Example Formspree wiring (uncomment + add your form id):
-  // const res = await fetch("https://formspree.io/f/XXXXXXXX", {
-  //   method: "POST",
-  //   headers: { "Accept": "application/json", "Content-Type": "application/json" },
-  //   body: JSON.stringify({ email }),
-  // });
-  // if (!res.ok) throw new Error("submit failed");
+/* ----- Mailchimp waitlist ------------------------------------------------
+   Paste your audience's embedded-form action URL below. Find it in Mailchimp:
+   Audience → Signup forms → Embedded forms → Standard → copy the <form action="…">
+   It looks like:
+     https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY
+   Until this is filled in, signups are kept in the browser as a fallback so
+   the form still behaves. No backend needed — we submit via JSONP. */
+const MAILCHIMP_ACTION_URL = "";
 
+async function submitEmail(email) {
+  if (MAILCHIMP_ACTION_URL) return mailchimpSubscribe(email);
+
+  // Fallback before Mailchimp is configured: remember locally so the
+  // form still confirms to the user (nothing is lost).
   const list = JSON.parse(localStorage.getItem("tw_waitlist") || "[]");
   if (!list.includes(email)) list.push(email);
   localStorage.setItem("tw_waitlist", JSON.stringify(list));
-  return new Promise((r) => setTimeout(r, 500));
+  return new Promise((r) => setTimeout(r, 400));
+}
+
+/* Mailchimp has no CORS, so we use its JSONP endpoint (/post-json + callback). */
+function mailchimpSubscribe(email) {
+  return new Promise((resolve, reject) => {
+    const cb = "mc_cb_" + Date.now();
+    const url =
+      MAILCHIMP_ACTION_URL.replace("/post?", "/post-json?") +
+      "&EMAIL=" + encodeURIComponent(email) +
+      "&c=" + cb;
+
+    const script = document.createElement("script");
+    let settled = false;
+    const cleanup = () => { delete window[cb]; script.remove(); };
+
+    window[cb] = (data) => {
+      settled = true;
+      cleanup();
+      const msg = (data && data.msg) || "";
+      // success, or "already subscribed" — both are fine for a waitlist
+      if ((data && data.result === "success") || /already subscribed/i.test(msg)) {
+        resolve(data);
+      } else {
+        reject(new Error(msg || "subscribe failed"));
+      }
+    };
+    script.onerror = () => { if (!settled) { cleanup(); reject(new Error("network")); } };
+    setTimeout(() => { if (!settled) { cleanup(); reject(new Error("timeout")); } }, 10000);
+
+    script.src = url;
+    document.body.appendChild(script);
+  });
 }
 
 /* ---------- boot ---------------------------------------- */

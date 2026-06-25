@@ -97,21 +97,23 @@ default GoDaddy A record that points the apex at their landing service.
 DNS can take from a few minutes up to ~48 hours to propagate. Check progress
 with `dig www.thobewear.com +short` (should resolve to GitHub IPs).
 
-## 3. Wire up the signup form (optional but recommended)
+## 3. Connect the waitlist to Mailchimp
 
-Out of the box the form validates and stores emails in the visitor's browser
-(`localStorage`) so nothing is lost while you choose a provider. To collect
-real signups, open `main.js`, find `submitEmail()`, and uncomment the
-**Formspree** example (or swap in Mailchimp / Beehiiv / ConvertKit):
+The form is wired for **Mailchimp** via its JSONP endpoint (no backend needed).
+Until you add your audience URL, signups are stored in the visitor's browser as
+a fallback so the form still confirms. To go live:
+
+1. In Mailchimp: **Audience → Signup forms → Embedded forms → Standard**.
+2. Copy the `action="…"` URL from the generated code. It looks like:
+   `https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY`
+3. In `main.js`, paste it into `MAILCHIMP_ACTION_URL`:
 
 ```js
-const res = await fetch("https://formspree.io/f/XXXXXXXX", {
-  method: "POST",
-  headers: { Accept: "application/json", "Content-Type": "application/json" },
-  body: JSON.stringify({ email }),
-});
-if (!res.ok) throw new Error("submit failed");
+const MAILCHIMP_ACTION_URL = "https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY";
 ```
+
+That's it — new signups flow straight into your Mailchimp audience, and you can
+email everyone at launch. "Already subscribed" is treated as success.
 
 ## 4. Customize
 

@@ -401,6 +401,16 @@ body {
 .social a:hover { color: var(--text); }
 .social a:hover::after { width: 100%; }
 
+/* inert placeholders for not-yet-created accounts */
+.social-soon {
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: default;
+  opacity: 0.7;
+}
+
 .copy {
   font-size: 0.68rem;
   letter-spacing: 0.08em;
