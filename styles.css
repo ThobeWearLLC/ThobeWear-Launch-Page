@@ -102,15 +102,18 @@ body {
 }
 
 /* --- Top bar (brand + theme toggle) --------------------- */
+/* 3-column grid keeps the logo centered while the toggle stays right */
 .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   animation: rise 1s var(--ease) both;
 }
 
 .brand {
+  grid-column: 2;
+  justify-self: center;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -151,6 +154,8 @@ body {
 
 /* --- Theme toggle --------------------------------------- */
 .theme-toggle {
+  grid-column: 3;
+  justify-self: end;
   flex: none;
   display: grid;
   place-items: center;

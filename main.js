@@ -28,18 +28,18 @@ const THEME = {
   dark: {
     logo: "assets/logo-dark.png",
     fog: 0x0a0a0b,
-    colorLow: 0x6e5a2e,
-    colorHigh: 0xe7cf95,
+    colorLow: 0x8a6f33,
+    colorHigh: 0xf2dca0,
     blending: "additive",
-    alpha: 0.55,
+    alpha: 0.95,
   },
   light: {
     logo: "assets/logo-light.png",
     fog: 0xf4ede1,
     colorLow: 0x9c7a2e,
-    colorHigh: 0xbf8f33,
+    colorHigh: 0xc79a3a,
     blending: "normal",
-    alpha: 0.5,
+    alpha: 0.8,
   },
 };
 
@@ -71,7 +71,7 @@ async function initScene() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0a0a0b, 0.085);
+  scene.fog = new THREE.FogExp2(0x0a0a0b, 0.055);
 
   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
   camera.position.set(0, 0.6, 9);
@@ -109,14 +109,15 @@ async function initScene() {
       uTime: { value: 0 },
       uColorLow: { value: new THREE.Color(0x6e5a2e) },
       uColorHigh: { value: new THREE.Color(0xe7cf95) },
-      uAlpha: { value: 0.55 },
-      uSize: { value: 14.0 * Math.min(window.devicePixelRatio, 2) },
+      uAlpha: { value: 0.95 },
+      uSize: { value: 18.0 * Math.min(window.devicePixelRatio, 2) },
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
       uniform float uSize;
       attribute float seed;
       varying float vGlow;
+      varying float vTwinkle;
 
       void main() {
         vec3 p = position;
@@ -131,8 +132,14 @@ async function initScene() {
 
         vGlow = (w1 + w2) * 0.5 * 0.5 + 0.5; // 0..1 for color mix
 
+        // Per-point shimmer so the field reads as drifting sparkles.
+        // Sharpened with pow() so most points are calm and a few flare.
+        float tw = 0.5 + 0.5 * sin(uTime * 1.8 + seed * 6.2831);
+        vTwinkle = pow(tw, 2.5);
+
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = uSize * (1.0 / -mv.z);
+        // bright points swell slightly as they sparkle
+        gl_PointSize = uSize * (0.7 + 0.6 * vTwinkle) * (1.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -141,14 +148,21 @@ async function initScene() {
       uniform vec3 uColorHigh;
       uniform float uAlpha;
       varying float vGlow;
+      varying float vTwinkle;
 
       void main() {
-        // soft round falloff
+        // soft round falloff with a brighter core for a sparkle glint
         vec2 c = gl_PointCoord - 0.5;
         float d = length(c);
-        float alpha = smoothstep(0.5, 0.0, d) * uAlpha;
+        float halo = smoothstep(0.5, 0.0, d);
+        float core = smoothstep(0.16, 0.0, d);
+        float alpha = (halo * 0.65 + core * 0.5) * uAlpha;
+
+        // twinkle modulates brightness so points shimmer in and out
+        alpha *= mix(0.35, 1.0, vTwinkle);
 
         vec3 col = mix(uColorLow, uColorHigh, smoothstep(0.2, 1.0, vGlow));
+        col += core * vTwinkle * 0.4; // hot white-gold glint at the center
         gl_FragColor = vec4(col, alpha);
       }
     `,
