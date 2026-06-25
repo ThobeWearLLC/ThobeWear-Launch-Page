@@ -12,6 +12,7 @@
 
   --maxw: 760px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --shine-duration: 6s;   /* shared by the logo + "Reimagined" glares */
 }
 
 /* ---- DARK theme (default, luxury ground) ---------------- */
@@ -155,7 +156,7 @@ body {
   -webkit-mask: var(--logo-mask) center / contain no-repeat;
           mask: var(--logo-mask) center / contain no-repeat;
   mix-blend-mode: multiply;
-  animation: logo-sheen 5.5s linear infinite;
+  animation: logo-sheen var(--shine-duration) linear infinite;
 }
 /* Light mode: black artwork → a warm gold band with screen lifts a
    golden streak out of the dark wordmark. */
@@ -255,32 +256,32 @@ body {
   display: inline-block;   /* clean box so the tiled gradient seams align */
   font-style: italic;
   font-weight: 400;
-  /* Seamless looping shine. Two requirements:
-     1) a 90deg (pure horizontal) gradient so repeated tiles align
-        perfectly at every seam, and identical end colours (accent),
-     2) background-size 200% + a 100% → -100% sweep, which travels
-        EXACTLY one tile width, so the loop wraps with no jump. */
+  /* Glare synced to the logo: same duration + same sweep-then-rest
+     rhythm (sweep 0-88%, idle 88-100%). A 90deg gradient with uniform
+     gold ends tiles seamlessly; background-size 300% means one tile is
+     a 150% position shift, so the held end state equals the start and
+     the loop never jumps. */
   background: linear-gradient(
     90deg,
     var(--accent) 0%,
-    var(--accent) 38%,
+    var(--accent) 43%,
     #fff6df 50%,
-    var(--accent-2) 58%,
-    var(--accent) 70%,
+    var(--accent-2) 54%,
+    var(--accent) 61%,
     var(--accent) 100%
   );
-  background-size: 200% auto;
+  background-size: 300% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   will-change: background-position;
-  animation: text-shine 6s linear infinite;
+  animation: text-shine var(--shine-duration) linear infinite;
 }
 
-/* move exactly one tile (200%) → invisible wrap */
+/* sweep one tile (150%) during 0-88%, then idle — mirrors logo-sheen */
 @keyframes text-shine {
-  from { background-position: 100% center; }
-  to   { background-position: -100% center; }
+  0%        { background-position: 150% center; }
+  88%, 100% { background-position: 0% center; }
 }
 
 .subhead {
