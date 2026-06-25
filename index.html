@@ -53,15 +53,17 @@
   <main class="stage">
     <header class="topbar">
       <div class="brand">
-        <!-- Logo image swaps with theme; falls back to the text lockup
-             until the PNGs are added to /assets -->
-        <img
-          class="brand__logo"
-          id="brandLogo"
-          src="assets/logo-dark.png"
-          alt="ThobeWear"
-          onerror="this.classList.add('is-missing'); document.getElementById('brandText').classList.add('is-shown');"
-        />
+        <!-- Logo image swaps with theme; a masked sheen sweeps across it.
+             Falls back to the text lockup until the PNGs are in /assets -->
+        <span class="brand__logo-wrap">
+          <img
+            class="brand__logo"
+            id="brandLogo"
+            src="assets/logo-dark.png"
+            alt="ThobeWear"
+            onerror="this.classList.add('is-missing'); this.closest('.brand__logo-wrap').classList.add('is-missing'); document.getElementById('brandText').classList.add('is-shown');"
+          />
+        </span>
         <span class="brand__text" id="brandText">
           <span class="brand__mark">TW</span>
           <span class="brand__name">ThobeWear</span>

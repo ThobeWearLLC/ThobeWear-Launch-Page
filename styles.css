@@ -26,6 +26,7 @@
   --muted:     #8a8378;
   --accent:    var(--champagne);
   --accent-2:  var(--champagne-2);
+  --logo-mask: url("assets/logo-dark.png");
 }
 
 /* ---- LIGHT theme (warm gallery ivory) ------------------- */
@@ -40,6 +41,7 @@
   --muted:     #8a8378;
   --accent:    var(--champagne-deep);
   --accent-2:  var(--champagne);
+  --logo-mask: url("assets/logo-light.png");
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -119,6 +121,11 @@ body {
   gap: 0.7rem;
   min-height: 64px;
 }
+.brand__logo-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
 .brand__logo {
   height: clamp(56px, 8vw, 76px);
   width: auto;
@@ -127,6 +134,47 @@ body {
   display: block;
 }
 .brand__logo.is-missing { display: none; }
+.brand__logo-wrap.is-missing::after { display: none; }
+
+/* metallic sheen that periodically sweeps across the logo artwork.
+   Dark mode: white artwork → a GOLD band with multiply reads as a
+   gold shimmer travelling across the wordmark. */
+.brand__logo-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 36%,
+    rgba(176, 132, 40, 0.92) 50%,
+    transparent 64%
+  );
+  background-size: 280% 100%;
+  background-repeat: no-repeat;
+  -webkit-mask: var(--logo-mask) center / contain no-repeat;
+          mask: var(--logo-mask) center / contain no-repeat;
+  mix-blend-mode: multiply;
+  animation: logo-sheen 6.5s var(--ease) infinite;
+}
+/* Light mode: black artwork → a warm gold band with screen lifts a
+   golden streak out of the dark wordmark. */
+:root[data-theme="light"] .brand__logo-wrap::after {
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(231, 207, 149, 0.95) 50%,
+    transparent 62%
+  );
+  background-size: 280% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+}
+
+@keyframes logo-sheen {
+  0%        { background-position: 135% 0; }
+  55%, 100% { background-position: -35% 0; }
+}
 
 .brand__text { display: none; align-items: center; gap: 0.7rem; }
 .brand__text.is-shown { display: flex; }
@@ -206,10 +254,25 @@ body {
 .headline em {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(100deg, var(--accent-2), var(--accent) 55%, var(--champagne-deep));
+  /* a moving highlight band sweeps across the gold for a metallic shine */
+  background: linear-gradient(
+    100deg,
+    var(--champagne-deep) 0%,
+    var(--accent) 22%,
+    #fff6df 48%,
+    var(--accent-2) 54%,
+    var(--accent) 78%,
+    var(--champagne-deep) 100%
+  );
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: text-shine 5.5s linear infinite;
+}
+
+@keyframes text-shine {
+  to { background-position: -220% center; }
 }
 
 .subhead {
@@ -228,7 +291,7 @@ body {
   width: min(100%, 480px);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 2px;
+  border-radius: 16px;
   padding: 0.4rem;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -244,19 +307,25 @@ body {
   border: none;
   outline: none;
   color: var(--text);
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 300;
-  letter-spacing: 0.02em;
-  padding: 0.75rem 0.85rem;
+  /* softer, less geometric than the body sans — easier on the eyes */
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0.7rem 1rem;
 }
-.signup input::placeholder { color: var(--muted); }
+.signup input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+  opacity: 0.95;
+}
 
 .signup button {
   flex: none;
   cursor: pointer;
   border: none;
-  border-radius: 2px;
+  border-radius: 12px;
   padding: 0.75rem 1.4rem;
   font-family: "Jost", sans-serif;
   font-weight: 500;
