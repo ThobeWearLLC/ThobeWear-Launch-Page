@@ -411,56 +411,39 @@ function initSignup() {
   });
 }
 
-/* ----- Mailchimp waitlist ------------------------------------------------
-   Paste your audience's embedded-form action URL below. Find it in Mailchimp:
-   Audience → Signup forms → Embedded forms → Standard → copy the <form action="…">
-   It looks like:
-     https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY
-   Until this is filled in, signups are kept in the browser as a fallback so
-   the form still behaves. No backend needed — we submit via JSONP. */
-const MAILCHIMP_ACTION_URL = "";
+/* ----- Kit (ConvertKit) waitlist ----------------------------------------
+   Fill in BOTH values from your Kit account, then signups flow straight in:
+   - KIT_API_KEY: Kit → Settings → Advanced → "API Key" (the public key; safe
+     to expose in client code — it is NOT the secret API Secret).
+   - KIT_FORM_ID: open the form you want; the number in the editor URL
+     (e.g. app.kit.com/forms/designers/<FORM_ID>/edit) or Form → Settings.
+   Until both are filled, signups are kept in the browser as a fallback so the
+   form still confirms. The endpoint supports CORS, so a plain fetch works. */
+const KIT_API_KEY = "";   // e.g. "0aBcD1EfGhIjKlMnOpQrSt"
+const KIT_FORM_ID = "";   // e.g. "7654321"
 
 async function submitEmail(email) {
-  if (MAILCHIMP_ACTION_URL) return mailchimpSubscribe(email);
+  if (KIT_API_KEY && KIT_FORM_ID) return kitSubscribe(email);
 
-  // Fallback before Mailchimp is configured: remember locally so the
-  // form still confirms to the user (nothing is lost).
+  // Fallback before Kit is configured: remember locally so the form still
+  // confirms to the user (nothing is lost).
   const list = JSON.parse(localStorage.getItem("tw_waitlist") || "[]");
   if (!list.includes(email)) list.push(email);
   localStorage.setItem("tw_waitlist", JSON.stringify(list));
   return new Promise((r) => setTimeout(r, 400));
 }
 
-/* Mailchimp has no CORS, so we use its JSONP endpoint (/post-json + callback). */
-function mailchimpSubscribe(email) {
-  return new Promise((resolve, reject) => {
-    const cb = "mc_cb_" + Date.now();
-    const url =
-      MAILCHIMP_ACTION_URL.replace("/post?", "/post-json?") +
-      "&EMAIL=" + encodeURIComponent(email) +
-      "&c=" + cb;
-
-    const script = document.createElement("script");
-    let settled = false;
-    const cleanup = () => { delete window[cb]; script.remove(); };
-
-    window[cb] = (data) => {
-      settled = true;
-      cleanup();
-      const msg = (data && data.msg) || "";
-      // success, or "already subscribed" — both are fine for a waitlist
-      if ((data && data.result === "success") || /already subscribed/i.test(msg)) {
-        resolve(data);
-      } else {
-        reject(new Error(msg || "subscribe failed"));
-      }
-    };
-    script.onerror = () => { if (!settled) { cleanup(); reject(new Error("network")); } };
-    setTimeout(() => { if (!settled) { cleanup(); reject(new Error("timeout")); } }, 10000);
-
-    script.src = url;
-    document.body.appendChild(script);
-  });
+async function kitSubscribe(email) {
+  const res = await fetch(
+    `https://api.convertkit.com/v3/forms/${KIT_FORM_ID}/subscribe`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: KIT_API_KEY, email }),
+    }
+  );
+  if (!res.ok) throw new Error("subscribe failed");
+  return res.json(); // { subscription: { ... } }
 }
 
 /* ---------- boot ---------------------------------------- */

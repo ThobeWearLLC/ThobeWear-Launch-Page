@@ -97,23 +97,24 @@ default GoDaddy A record that points the apex at their landing service.
 DNS can take from a few minutes up to ~48 hours to propagate. Check progress
 with `dig www.thobewear.com +short` (should resolve to GitHub IPs).
 
-## 3. Connect the waitlist to Mailchimp
+## 3. Connect the waitlist to Kit (ConvertKit)
 
-The form is wired for **Mailchimp** via its JSONP endpoint (no backend needed).
-Until you add your audience URL, signups are stored in the visitor's browser as
-a fallback so the form still confirms. To go live:
-
-1. In Mailchimp: **Audience → Signup forms → Embedded forms → Standard**.
-2. Copy the `action="…"` URL from the generated code. It looks like:
-   `https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY`
-3. In `main.js`, paste it into `MAILCHIMP_ACTION_URL`:
+The form is wired for **Kit** via its public API (a plain `fetch`, no backend).
+Until you add your two values, signups are stored in the visitor's browser as a
+fallback so the form still confirms. To go live, open `main.js` and set:
 
 ```js
-const MAILCHIMP_ACTION_URL = "https://thobewear.usXX.list-manage.com/subscribe/post?u=XXXX&id=YYYY";
+const KIT_API_KEY = "your-public-api-key";  // Kit → Settings → Advanced → API Key
+const KIT_FORM_ID = "1234567";              // the number in the form editor URL
 ```
 
-That's it — new signups flow straight into your Mailchimp audience, and you can
-email everyone at launch. "Already subscribed" is treated as success.
+- **API Key** — Kit → **Settings → Advanced → API Key** (the public *API Key*,
+  not the *API Secret*; it's safe in client code).
+- **Form ID** — create/open a form in Kit; the number in
+  `app.kit.com/forms/.../<FORM_ID>/edit`.
+
+New signups then flow straight into your Kit form/audience, ready to email at
+launch.
 
 ## 4. Customize
 
