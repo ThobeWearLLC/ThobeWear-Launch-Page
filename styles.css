@@ -120,7 +120,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  min-height: 64px;
+  min-height: 96px;
 }
 .brand__logo-wrap {
   position: relative;
@@ -128,9 +128,9 @@ body {
   line-height: 0;
 }
 .brand__logo {
-  height: clamp(56px, 8vw, 76px);
+  height: clamp(74px, 11vw, 104px);
   width: auto;
-  max-width: 280px;
+  max-width: 340px;
   object-fit: contain;
   display: block;
 }
@@ -146,35 +146,39 @@ body {
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
-    115deg,
+    90deg,
     transparent 36%,
     rgba(176, 132, 40, 0.92) 50%,
     transparent 64%
   );
-  background-size: 280% 100%;
+  background-size: 300% 100%;
   background-repeat: no-repeat;
   -webkit-mask: var(--logo-mask) center / contain no-repeat;
           mask: var(--logo-mask) center / contain no-repeat;
   mix-blend-mode: multiply;
-  animation: logo-sheen var(--shine-duration) linear infinite;
+  will-change: background-position;
+  animation: glare var(--shine-duration) linear infinite;
 }
 /* Light mode: black artwork → a warm gold band with screen lifts a
    golden streak out of the dark wordmark. */
 :root[data-theme="light"] .brand__logo-wrap::after {
   background: linear-gradient(
-    115deg,
+    90deg,
     transparent 38%,
     rgba(231, 207, 149, 0.95) 50%,
     transparent 62%
   );
-  background-size: 280% 100%;
+  background-size: 300% 100%;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
 }
 
-@keyframes logo-sheen {
-  0%        { background-position: 140% 0; }   /* slower travel, short idle */
-  88%, 100% { background-position: -40% 0; }
+/* ONE keyframe drives both glares. Identical geometry (300% size, 90deg,
+   band centred at 50%) means the highlight crosses each element's centre
+   at the exact same fraction of the cycle — synced on every device. */
+@keyframes glare {
+  0%        { background-position: 150% 50%; }
+  88%, 100% { background-position: 0% 50%; }
 }
 
 .brand__text { display: none; align-items: center; gap: 0.7rem; }
@@ -275,13 +279,7 @@ body {
   background-clip: text;
   color: transparent;
   will-change: background-position;
-  animation: text-shine var(--shine-duration) linear infinite;
-}
-
-/* sweep one tile (150%) during 0-88%, then idle — mirrors logo-sheen */
-@keyframes text-shine {
-  0%        { background-position: 150% center; }
-  88%, 100% { background-position: 0% center; }
+  animation: glare var(--shine-duration) linear infinite;   /* shared keyframe */
 }
 
 .subhead {
