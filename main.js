@@ -400,18 +400,8 @@ function initSignup() {
     try {
       await submitEmail(email);
       input.value = "";
-      // Swap the form for a prominent confirmation card.
-      form.hidden = true;
-      note.hidden = true;
-      const done = $("#signupDone");
-      if (done) {
-        done.hidden = false;
-      } else {
-        // Fallback if the card markup isn't present.
-        note.textContent = "You're on the list — check your inbox (and spam) to confirm.";
-        note.classList.add("is-success");
-        note.hidden = false;
-      }
+      // Send them to the branded confirmation page.
+      window.location.assign("confirmed.html");
     } catch (err) {
       note.textContent = "Something went wrong — please try again shortly.";
       note.classList.add("is-error");
