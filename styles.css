@@ -155,7 +155,7 @@ body {
   -webkit-mask: var(--logo-mask) center / contain no-repeat;
           mask: var(--logo-mask) center / contain no-repeat;
   mix-blend-mode: multiply;
-  animation: logo-sheen 6.5s var(--ease) infinite;
+  animation: logo-sheen 5.5s linear infinite;
 }
 /* Light mode: black artwork → a warm gold band with screen lifts a
    golden streak out of the dark wordmark. */
@@ -172,8 +172,8 @@ body {
 }
 
 @keyframes logo-sheen {
-  0%        { background-position: 135% 0; }
-  55%, 100% { background-position: -35% 0; }
+  0%        { background-position: 140% 0; }   /* slower travel, short idle */
+  88%, 100% { background-position: -40% 0; }
 }
 
 .brand__text { display: none; align-items: center; gap: 0.7rem; }
@@ -254,25 +254,29 @@ body {
 .headline em {
   font-style: italic;
   font-weight: 400;
-  /* a moving highlight band sweeps across the gold for a metallic shine */
+  /* Uniform gold base with a single white highlight band. Keeping the
+     base uniform means the loop wraps over flat colour — no visible
+     "cut" — and the highlight simply sweeps across smoothly. */
   background: linear-gradient(
     100deg,
-    var(--champagne-deep) 0%,
-    var(--accent) 22%,
-    #fff6df 48%,
-    var(--accent-2) 54%,
-    var(--accent) 78%,
-    var(--champagne-deep) 100%
+    var(--accent) 0%,
+    var(--accent) 42%,
+    #fff6df 50%,
+    var(--accent-2) 56%,
+    var(--accent) 64%,
+    var(--accent) 100%
   );
-  background-size: 220% auto;
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: text-shine 5.5s linear infinite;
+  animation: text-shine 6s linear infinite;
 }
 
+/* explicit, equal vertical (center) on both ends → no vertical hitch */
 @keyframes text-shine {
-  to { background-position: -220% center; }
+  from { background-position: 125% center; }
+  to   { background-position: -125% center; }
 }
 
 .subhead {
