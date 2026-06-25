@@ -32,14 +32,18 @@ const THEME = {
     colorHigh: 0xf2dca0,
     blending: "additive",
     alpha: 0.95,
+    glint: 0.4,                  // hot white-gold core glint (glows on black)
+    flare: [0.45, 0.36, 0.18],   // cursor wake lightens toward gold
   },
   light: {
     logo: "assets/logo-light.png",
     fog: 0xf4ede1,
-    colorLow: 0x9c7a2e,
-    colorHigh: 0xc79a3a,
+    colorLow: 0x5e4514,          // deep bronze — reads against cream
+    colorHigh: 0x8c6817,         // rich gold even at the bright twinkle
     blending: "normal",
-    alpha: 0.8,
+    alpha: 1.0,
+    glint: -0.14,                // darken the core for contrast on a light bg
+    flare: [-0.22, -0.18, -0.09],// cursor wake deepens the gold instead of lifting it
   },
 };
 
@@ -114,6 +118,8 @@ async function initScene() {
       uCursor: { value: new THREE.Vector2(0, 0) },   // pointer in NDC (-1..1)
       uCursorActive: { value: 0 },                    // fades in/out with motion
       uAspect: { value: 1 },
+      uGlint: { value: 0.4 },                         // core glint (theme-aware)
+      uFlare: { value: new THREE.Vector3(0.45, 0.36, 0.18) }, // cursor wake tint
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
@@ -162,6 +168,8 @@ async function initScene() {
       uniform vec3 uColorLow;
       uniform vec3 uColorHigh;
       uniform float uAlpha;
+      uniform float uGlint;
+      uniform vec3 uFlare;
       varying float vGlow;
       varying float vTwinkle;
       varying float vInfluence;
@@ -179,8 +187,8 @@ async function initScene() {
         alpha += halo * vInfluence * 0.5;
 
         vec3 col = mix(uColorLow, uColorHigh, smoothstep(0.2, 1.0, vGlow));
-        col += core * vTwinkle * 0.4;          // hot white-gold sparkle glint
-        col += vInfluence * vec3(0.45, 0.36, 0.18); // warm flare near cursor
+        col += core * vTwinkle * uGlint;       // glint: lightens on dark, deepens on light
+        col += vInfluence * uFlare;            // cursor wake tint (theme-aware)
         gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
       }
     `,
@@ -259,6 +267,8 @@ function applySceneTheme(name) {
   material.uniforms.uColorLow.value.setHex(t.colorLow);
   material.uniforms.uColorHigh.value.setHex(t.colorHigh);
   material.uniforms.uAlpha.value = t.alpha;
+  material.uniforms.uGlint.value = t.glint;
+  material.uniforms.uFlare.value.set(t.flare[0], t.flare[1], t.flare[2]);
   material.blending = t.blending === "additive" ? THREE.AdditiveBlending : THREE.NormalBlending;
   material.needsUpdate = true;
 
@@ -419,26 +429,13 @@ async function submitEmail(email) {
 }
 
 /* ===========================================================
-   5. SOFT COUNTDOWN  (anticipation, not pressure)
+   5. UNVEILING LINE  (anticipation, not pressure)
+   No official date yet — show a soft season instead of a clock.
    =========================================================== */
 function initCountdown() {
   const el = $("#countdown");
   if (!el) return;
-
-  const LAUNCH = new Date("2026-09-01T09:00:00Z");
-
-  function tick() {
-    const diff = LAUNCH - new Date();
-    if (diff <= 0) {
-      el.innerHTML = "The house is open. <b>Welcome.</b>";
-      return;
-    }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    el.innerHTML = `Unveiling in <b>${d}</b> days · <b>${h}</b> hours`;
-  }
-  tick();
-  setInterval(tick, 60 * 1000);
+  el.innerHTML = "Unveiling <b>Late 2026</b>";
 }
 
 /* ---------- boot ---------------------------------------- */
