@@ -111,13 +111,20 @@ async function initScene() {
       uColorHigh: { value: new THREE.Color(0xe7cf95) },
       uAlpha: { value: 0.95 },
       uSize: { value: 18.0 * Math.min(window.devicePixelRatio, 2) },
+      uCursor: { value: new THREE.Vector2(0, 0) },   // pointer in NDC (-1..1)
+      uCursorActive: { value: 0 },                    // fades in/out with motion
+      uAspect: { value: 1 },
     },
     vertexShader: /* glsl */ `
       uniform float uTime;
       uniform float uSize;
+      uniform vec2 uCursor;
+      uniform float uCursorActive;
+      uniform float uAspect;
       attribute float seed;
       varying float vGlow;
       varying float vTwinkle;
+      varying float vInfluence;
 
       void main() {
         vec3 p = position;
@@ -138,9 +145,17 @@ async function initScene() {
         vTwinkle = pow(tw, 2.5);
 
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        // bright points swell slightly as they sparkle
-        gl_PointSize = uSize * (0.7 + 0.6 * vTwinkle) * (1.0 / -mv.z);
         gl_Position = projectionMatrix * mv;
+
+        // Cursor wake: points near the pointer (in screen space) flare and swell
+        vec2 ndc = gl_Position.xy / gl_Position.w;
+        vec2 dc = ndc - uCursor;
+        dc.x *= uAspect;                       // keep the halo circular
+        float infl = smoothstep(0.42, 0.0, length(dc)) * uCursorActive;
+        vInfluence = infl;
+
+        // bright points swell as they sparkle, and again near the cursor
+        gl_PointSize = uSize * (0.7 + 0.6 * vTwinkle) * (1.0 + infl * 2.2) * (1.0 / -mv.z);
       }
     `,
     fragmentShader: /* glsl */ `
@@ -149,6 +164,7 @@ async function initScene() {
       uniform float uAlpha;
       varying float vGlow;
       varying float vTwinkle;
+      varying float vInfluence;
 
       void main() {
         // soft round falloff with a brighter core for a sparkle glint
@@ -158,12 +174,14 @@ async function initScene() {
         float core = smoothstep(0.16, 0.0, d);
         float alpha = (halo * 0.65 + core * 0.5) * uAlpha;
 
-        // twinkle modulates brightness so points shimmer in and out
+        // twinkle modulates brightness; cursor wake lifts it further
         alpha *= mix(0.35, 1.0, vTwinkle);
+        alpha += halo * vInfluence * 0.5;
 
         vec3 col = mix(uColorLow, uColorHigh, smoothstep(0.2, 1.0, vGlow));
-        col += core * vTwinkle * 0.4; // hot white-gold glint at the center
-        gl_FragColor = vec4(col, alpha);
+        col += core * vTwinkle * 0.4;          // hot white-gold sparkle glint
+        col += vInfluence * vec3(0.45, 0.36, 0.18); // warm flare near cursor
+        gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
       }
     `,
   });
@@ -179,16 +197,24 @@ async function initScene() {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    material.uniforms.uAspect.value = w / h;
   }
   resize();
   window.addEventListener("resize", resize);
 
-  /* --- Gentle mouse / device parallax ------------------ */
+  /* --- Gentle mouse / device parallax + cursor wake ---- */
   const target = { x: 0, y: 0 };
   const current = { x: 0, y: 0 };
   window.addEventListener("pointermove", (e) => {
     target.x = (e.clientX / window.innerWidth - 0.5) * 0.5;
     target.y = (e.clientY / window.innerHeight - 0.5) * 0.3;
+
+    // pointer in normalized device coords for the sparkle wake
+    material.uniforms.uCursor.value.set(
+      (e.clientX / window.innerWidth) * 2 - 1,
+      -((e.clientY / window.innerHeight) * 2 - 1)
+    );
+    material.uniforms.uCursorActive.value = 1.0;
   });
 
   /* --- Render loop ------------------------------------- */
@@ -197,6 +223,8 @@ async function initScene() {
   function render() {
     const t = clock.getElapsedTime();
     material.uniforms.uTime.value = t;
+    // the cursor wake fades out when the pointer goes still
+    material.uniforms.uCursorActive.value *= 0.94;
 
     current.x += (target.x - current.x) * 0.04;
     current.y += (target.y - current.y) * 0.04;
@@ -279,7 +307,61 @@ function initTheme() {
 }
 
 /* ===========================================================
-   3. PRE-LAUNCH SIGNUP
+   3. CUSTOM CURSOR  (elegant gold dot + trailing ring + glow)
+   Mouse-only and motion-safe: skipped on touch devices and when
+   the visitor prefers reduced motion (native cursor stays).
+   =========================================================== */
+function initCursor() {
+  const fine = window.matchMedia("(pointer: fine)").matches;
+  if (!fine || prefersReduced) return;
+
+  const dot = document.createElement("div");
+  const ring = document.createElement("div");
+  const glow = document.createElement("div");
+  dot.className = "cursor-dot";
+  ring.className = "cursor-ring";
+  glow.className = "cursor-glow";
+  document.body.append(glow, ring, dot);
+  root.classList.add("cursor-on");
+
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2; // target
+  let rx = mx, ry = my;   // ring (lagging)
+  let gx = mx, gy = my;   // glow (more lag)
+  let visible = false;
+
+  window.addEventListener("pointermove", (e) => {
+    mx = e.clientX; my = e.clientY;
+    if (!visible) { visible = true; root.classList.add("cursor-visible"); }
+    // the dot tracks 1:1 for precision
+    dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+  });
+
+  window.addEventListener("pointerdown", () => root.classList.add("cursor-down"));
+  window.addEventListener("pointerup", () => root.classList.remove("cursor-down"));
+  document.addEventListener("pointerleave", () => {
+    visible = false; root.classList.remove("cursor-visible");
+  });
+
+  // grow the ring over interactive elements
+  const interactive = "a, button, input, .theme-toggle";
+  document.addEventListener("pointerover", (e) => {
+    if (e.target.closest(interactive)) root.classList.add("cursor-hover");
+  });
+  document.addEventListener("pointerout", (e) => {
+    if (e.target.closest(interactive)) root.classList.remove("cursor-hover");
+  });
+
+  (function follow() {
+    rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+    gx += (mx - gx) * 0.08; gy += (my - gy) * 0.08;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+    glow.style.transform = `translate(${gx}px, ${gy}px) translate(-50%, -50%)`;
+    requestAnimationFrame(follow);
+  })();
+}
+
+/* ===========================================================
+   4. PRE-LAUNCH SIGNUP
    For now this validates + stores locally and shows a graceful
    confirmation. Wire `submitEmail()` to your provider (Formspree,
    Mailchimp, Beehiiv, ConvertKit…) when ready — see README.
@@ -337,7 +419,7 @@ async function submitEmail(email) {
 }
 
 /* ===========================================================
-   4. SOFT COUNTDOWN  (anticipation, not pressure)
+   5. SOFT COUNTDOWN  (anticipation, not pressure)
    =========================================================== */
 function initCountdown() {
   const el = $("#countdown");
@@ -363,4 +445,5 @@ function initCountdown() {
 initTheme();      // theme + logo first — never depends on 3D
 initSignup();
 initCountdown();
+initCursor();     // mouse-only, motion-safe
 initScene();      // async, decorative, isolated failure

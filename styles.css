@@ -326,6 +326,72 @@ body {
   color: var(--muted);
 }
 
+/* --- Custom cursor -------------------------------------- */
+/* Hide the native cursor only when our custom one is active.
+   Text fields keep a caret so typing still feels right. */
+:root.cursor-on,
+:root.cursor-on a,
+:root.cursor-on button,
+:root.cursor-on .theme-toggle { cursor: none; }
+:root.cursor-on input { cursor: text; }
+
+.cursor-dot,
+.cursor-ring,
+.cursor-glow {
+  position: fixed;
+  top: 0; left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  will-change: transform;
+}
+:root.cursor-visible .cursor-dot,
+:root.cursor-visible .cursor-ring { opacity: 1; }
+:root.cursor-visible .cursor-glow { opacity: 1; }
+
+.cursor-dot {
+  z-index: 90;
+  width: 6px; height: 6px;
+  margin: 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(201, 162, 75, 0.8);
+}
+
+.cursor-ring {
+  z-index: 89;
+  width: 34px; height: 34px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  transition: opacity 0.35s var(--ease),
+              width 0.3s var(--ease), height 0.3s var(--ease),
+              background-color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+
+/* soft gold pool that trails behind, lighting the field */
+.cursor-glow {
+  z-index: 1;
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(201, 162, 75, 0.18), transparent 62%);
+  mix-blend-mode: screen;
+  filter: blur(6px);
+}
+:root[data-theme="light"] .cursor-glow {
+  background: radial-gradient(circle, rgba(156, 122, 46, 0.20), transparent 62%);
+  mix-blend-mode: multiply;
+}
+
+/* grow + fill the ring over interactive elements */
+:root.cursor-hover .cursor-ring {
+  width: 56px; height: 56px;
+  background: rgba(201, 162, 75, 0.12);
+  border-color: var(--accent-2);
+}
+:root.cursor-hover .cursor-dot { opacity: 0.4; }
+
+/* press feedback */
+:root.cursor-down .cursor-ring { width: 26px; height: 26px; }
+
 /* --- Utilities ------------------------------------------ */
 .visually-hidden {
   position: absolute;
