@@ -351,6 +351,18 @@ body {
 }
 .signup button:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .signup button:active { transform: translateY(0); }
+.signup button:disabled,
+.signup input:disabled { opacity: 0.6; cursor: default; pointer-events: none; }
+
+/* Honeypot field: removed from view + the layout, but still in the DOM so
+   bots fill it. Not display:none (some bots skip those) — pushed off-screen. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
 .signup.is-done button { background: var(--text-soft); }
 
 .signup__note {

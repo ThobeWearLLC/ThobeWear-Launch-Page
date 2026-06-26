@@ -380,14 +380,33 @@ function initSignup() {
   const form = $("#signup");
   const input = $("#email");
   const note = $("#formNote");
+  const button = form && form.querySelector('button[type="submit"]');
   if (!form) return;
 
-  const valid = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  /* Pragmatic email check: single @, a dotted domain with a 2+ char TLD, and
+     no consecutive or edge dots. Not RFC-exhaustive (that's a rabbit hole) —
+     just enough to catch typos. Kit does the authoritative validation
+     server-side, so a spoofed client check can't sneak a bad address in. */
+  const valid = (v) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) &&
+    !/\.\./.test(v) &&
+    !/(^\.|\.$|@\.|\.@)/.test(v);
+
+  let submitting = false;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = input.value.trim();
+    if (submitting) return; // guard against the double-submit race
 
+    // Honeypot: a hidden field real users never see. If it's filled, it's a
+    // bot — quietly send it to the same page without hitting Kit.
+    if (form.elements.company && form.elements.company.value) {
+      window.location.assign("confirmed.html");
+      return;
+    }
+
+    // Normalize to lowercase so casing never creates a "duplicate".
+    const email = input.value.trim().toLowerCase();
     note.classList.remove("is-success", "is-error");
 
     if (!valid(email)) {
@@ -397,14 +416,23 @@ function initSignup() {
       return;
     }
 
+    submitting = true;
+    if (button) button.disabled = true;
+    input.disabled = true;
+
     try {
       await submitEmail(email);
       input.value = "";
-      // Send them to the branded confirmation page.
       window.location.assign("confirmed.html");
     } catch (err) {
-      note.textContent = "Something went wrong — please try again shortly.";
+      note.textContent = navigator.onLine
+        ? "Something went wrong. Please try again in a moment."
+        : "You appear to be offline. Check your connection and try again.";
       note.classList.add("is-error");
+      // Re-enable so they can retry (success navigates away, so no reset there).
+      submitting = false;
+      if (button) button.disabled = false;
+      input.disabled = false;
     }
   });
 }
@@ -420,41 +448,49 @@ const KIT_API_KEY = "9II37xp8cQ3m7r2_0vfROA";
 const KIT_FORM_ID = "9608878";
 
 async function submitEmail(email) {
-  // Always keep a local backup first, so an email is never lost even if the
-  // network request below fails for any reason.
-  const list = JSON.parse(localStorage.getItem("tw_waitlist") || "[]");
-  if (!list.includes(email)) list.push(email);
-  localStorage.setItem("tw_waitlist", JSON.stringify(list));
-
   if (KIT_API_KEY && KIT_FORM_ID) return kitSubscribe(email);
+  // No provider configured (local/dev): simulate a short round-trip.
   return new Promise((r) => setTimeout(r, 300));
 }
 
-/* Kit's API doesn't return CORS headers, so the browser can't read the
-   response. We send a "simple" request (urlencoded body, no custom headers =>
-   no CORS preflight) in no-cors mode: Kit records the subscriber, but the
-   response is opaque, so there's nothing to wait on or act on. We fire it and
-   resolve right away — the localStorage backup above is the safety net, and
-   we cap the request so a slow network can never leave it dangling. */
+/* Kit's API sends no CORS headers, so the browser cannot READ the response —
+   an opaque success and an opaque server error are indistinguishable. From a
+   static page we therefore can't truly *confirm* Kit accepted the address;
+   the only real fix for that is a server-side proxy that holds the key and
+   reads Kit's reply. What we CAN do honestly here:
+     - reject up front if the browser is offline,
+     - actually await the request and surface genuine network failures
+       (DNS/connection) instead of faking success,
+     - abort after 10s so a stalled connection can't hang the form. An abort
+       means the request was already dispatched, so we let it pass. */
 function kitSubscribe(email) {
+  if (!navigator.onLine) return Promise.reject(new Error("offline"));
+
   const body =
     "api_key=" + encodeURIComponent(KIT_API_KEY) +
     "&email=" + encodeURIComponent(email);
 
   const ctrl = new AbortController();
-  const cap = setTimeout(() => ctrl.abort(), 8000);
-  fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_ID}/subscribe`, {
+  const cap = setTimeout(() => ctrl.abort(), 10000);
+
+  return fetch(`https://api.convertkit.com/v3/forms/${KIT_FORM_ID}/subscribe`, {
     method: "POST",
     mode: "no-cors",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
     signal: ctrl.signal,
-    keepalive: true, // let it finish even if the page is navigating away
+    keepalive: true, // let it finish even as we navigate to the confirm page
   })
-    .catch(() => {}) // opaque/failed: nothing to act on; backup covers it
+    .then(
+      () => {},
+      (err) => {
+        // Our 10s timeout fired: the request left the machine, so don't block
+        // the user. Any other rejection is a real network error — surface it.
+        if (err && err.name === "AbortError") return;
+        throw err;
+      }
+    )
     .finally(() => clearTimeout(cap));
-
-  return Promise.resolve(); // confirm to the user immediately
 }
 
 /* ---------- boot ---------------------------------------- */
