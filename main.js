@@ -38,8 +38,8 @@ const THEME = {
   light: {
     logo: "assets/logo-light.png",
     fog: 0xf4ede1,
-    colorLow: 0x9a6f1c,          // warm bronze — clearly gold against cream
-    colorHigh: 0xc99a30,         // rich gold at the bright twinkle
+    colorLow: 0xc9a24b,          // signature champagne gold (matches the brand)
+    colorHigh: 0xe7cf95,         // gold highlight at the bright twinkle
     blending: "normal",
     alpha: 1.0,
     glint: 0.0,                  // no core darkening (that turned them near-black)
