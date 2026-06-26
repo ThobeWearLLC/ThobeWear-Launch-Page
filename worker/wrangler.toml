@@ -1,0 +1,19 @@
+name = "thobewear-signup"
+main = "src/worker.js"
+compatibility_date = "2024-05-01"
+
+# Non-secret config. The Kit FORM ID is not sensitive.
+[vars]
+KIT_FORM_ID = "9608878"
+
+# Secret (NOT stored here). Set it once with:
+#   wrangler secret put KIT_API_KEY
+# Paste your Kit API key when prompted. It stays encrypted in Cloudflare and
+# is never exposed to the browser.
+
+# --- Optional: per-IP rate limiting -------------------------------------
+# Create a KV namespace, then paste its id below and uncomment this block:
+#   wrangler kv namespace create RL
+# [[kv_namespaces]]
+# binding = "RL"
+# id = "PASTE_NAMESPACE_ID_HERE"

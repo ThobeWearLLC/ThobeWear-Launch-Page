@@ -425,9 +425,15 @@ function initSignup() {
       input.value = "";
       window.location.assign("confirmed.html");
     } catch (err) {
-      note.textContent = navigator.onLine
-        ? "Something went wrong. Please try again in a moment."
-        : "You appear to be offline. Check your connection and try again.";
+      const msg = err && err.message;
+      note.textContent =
+        msg === "rate_limited"
+          ? "That's a few too many tries. Please wait a minute and try again."
+          : msg === "invalid_email"
+          ? "Please enter a valid email address."
+          : !navigator.onLine || msg === "offline"
+          ? "You appear to be offline. Check your connection and try again."
+          : "Something went wrong. Please try again in a moment.";
       note.classList.add("is-error");
       // Re-enable so they can retry (success navigates away, so no reset there).
       submitting = false;
@@ -447,10 +453,33 @@ function initSignup() {
 const KIT_API_KEY = "9II37xp8cQ3m7r2_0vfROA";
 const KIT_FORM_ID = "9608878";
 
+/* Secure proxy (Cloudflare Worker — see /worker). When set, the browser talks
+   to this endpoint instead of Kit directly: the API key stays server-side, the
+   response is readable (so success/failure is real, not guessed), and the
+   server validates + rate-limits. Once you deploy the Worker, paste its URL
+   here and you can delete KIT_API_KEY above. Blank = direct Kit path below. */
+const SIGNUP_ENDPOINT = "";
+
 async function submitEmail(email) {
+  if (SIGNUP_ENDPOINT) return proxySubscribe(email);
   if (KIT_API_KEY && KIT_FORM_ID) return kitSubscribe(email);
   // No provider configured (local/dev): simulate a short round-trip.
   return new Promise((r) => setTimeout(r, 300));
+}
+
+/* Talks to the Worker proxy. Unlike the direct Kit call, this response IS
+   readable, so we can surface a truthful result to the user. */
+async function proxySubscribe(email) {
+  if (!navigator.onLine) throw new Error("offline");
+  const res = await fetch(SIGNUP_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (res.status === 429) throw new Error("rate_limited");
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok || !data.ok) throw new Error(data.error || "subscribe_failed");
 }
 
 /* Kit's API sends no CORS headers, so the browser cannot READ the response —
