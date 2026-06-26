@@ -270,6 +270,12 @@ body {
    300% means one tile is a 150% shift, so the loop never jumps. */
 .glare-text {
   display: inline-block;   /* clean box so the tiled gradient seams align */
+  /* background-clip:text masks the glyphs to this box; the tight headline
+     line-height would otherwise crop italic descenders (the "g" in
+     "Reimagined."). Pad the box down and pull it back with a negative margin
+     so descenders are painted in full without shifting the layout. */
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
   background: linear-gradient(
     90deg,
     var(--accent) 0%,
