@@ -20,6 +20,18 @@ document.querySelectorAll("[data-year]").forEach((el) => {
   el.textContent = new Date().getFullYear();
 });
 
+/* Pragmatic email check shared by the signup + contact forms: single @, a
+   dotted domain with a 2+ char TLD, and no consecutive or edge dots. Not
+   RFC-exhaustive (that's a rabbit hole) — just enough to catch typos. The
+   provider (Kit / Formspree) does the authoritative server-side validation. */
+function isValidEmail(v) {
+  return (
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) &&
+    !/\.\./.test(v) &&
+    !/(^\.|\.$|@\.|\.@)/.test(v)
+  );
+}
+
 /* Per-theme look for the page chrome + the 3D field.
    Additive blending glows beautifully on black but washes out
    on a light page, so light mode switches to normal blending
@@ -383,14 +395,7 @@ function initSignup() {
   const button = form && form.querySelector('button[type="submit"]');
   if (!form) return;
 
-  /* Pragmatic email check: single @, a dotted domain with a 2+ char TLD, and
-     no consecutive or edge dots. Not RFC-exhaustive (that's a rabbit hole) —
-     just enough to catch typos. Kit does the authoritative validation
-     server-side, so a spoofed client check can't sneak a bad address in. */
-  const valid = (v) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) &&
-    !/\.\./.test(v) &&
-    !/(^\.|\.$|@\.|\.@)/.test(v);
+  const valid = isValidEmail;
 
   let submitting = false;
 
@@ -522,8 +527,124 @@ function kitSubscribe(email) {
     .finally(() => clearTimeout(cap));
 }
 
+/* ===========================================================
+   5. CONTACT MODAL
+   An in-page <dialog> contact form — no mailto, no redirect. Submits to
+   CONTACT_ENDPOINT via fetch and shows a success state inline.
+   =========================================================== */
+
+/* Where contact messages are delivered. Easiest: a free Formspree form
+   (https://formspree.io) — create one and paste its endpoint here, e.g.
+   "https://formspree.io/f/abcdwxyz". It accepts JSON and replies with JSON,
+   so the visitor never leaves the page. (Our Cloudflare Worker could also
+   serve this if extended.) Blank = not wired yet. */
+const CONTACT_ENDPOINT = "";
+
+async function sendContact(payload) {
+  if (!CONTACT_ENDPOINT) throw new Error("not_configured");
+  if (!navigator.onLine) throw new Error("offline");
+  const res = await fetch(CONTACT_ENDPOINT, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("send_failed");
+}
+
+function initContact() {
+  const dlg = $("#contactDialog");
+  const openBtn = $("#contactOpen");
+  // Need native <dialog> support; if missing, fall back to a mailto link.
+  if (!dlg || !openBtn) return;
+  if (typeof dlg.showModal !== "function") {
+    openBtn.addEventListener("click", () => {
+      window.location.href = "mailto:contact@thobewear.com";
+    });
+    return;
+  }
+
+  const form = $("#contactForm");
+  const done = $("#contactDone");
+  const note = $("#contactNote");
+  const submitBtn = $("#contactSubmit");
+  const nameEl = $("#cName");
+  const emailEl = $("#cEmail");
+  const msgEl = $("#cMessage");
+  let sending = false;
+
+  const open = () => {
+    form.hidden = false;
+    done.hidden = true;
+    note.textContent = "";
+    note.classList.remove("is-error");
+    dlg.showModal();
+    nameEl.focus();
+  };
+  const close = () => dlg.close();
+
+  openBtn.addEventListener("click", open);
+  $("#contactClose").addEventListener("click", close);
+  $("#contactCancel").addEventListener("click", close);
+  $("#contactDoneClose").addEventListener("click", close);
+  // Click on the backdrop (outside the panel) closes it.
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) close(); });
+  // Reset the form once the close animation is irrelevant (dialog hidden).
+  dlg.addEventListener("close", () => { form.reset(); });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (sending) return;
+
+    // Honeypot: a filled hidden field means a bot — show success, send nothing.
+    if (form.elements.company && form.elements.company.value) {
+      form.hidden = true;
+      done.hidden = false;
+      return;
+    }
+
+    const name = nameEl.value.trim();
+    const email = emailEl.value.trim().toLowerCase();
+    const message = msgEl.value.trim();
+
+    note.classList.remove("is-error");
+    if (!name) { fail("Please enter your name.", nameEl); return; }
+    if (!isValidEmail(email)) { fail("Please enter a valid email address.", emailEl); return; }
+    if (message.length < 2) { fail("Please enter a short message.", msgEl); return; }
+
+    sending = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+    try {
+      await sendContact({ name, email, message });
+      form.hidden = true;
+      done.hidden = false;
+    } catch (err) {
+      const m = err && err.message;
+      fail(
+        m === "not_configured"
+          ? "Messaging isn't switched on yet — please email contact@thobewear.com for now."
+          : m === "offline"
+          ? "You appear to be offline. Check your connection and try again."
+          : "Couldn't send just now. Please try again in a moment.",
+        null
+      );
+    } finally {
+      sending = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send message";
+    }
+  });
+
+  function fail(text, focusEl) {
+    note.textContent = text;
+    note.classList.add("is-error");
+    if (focusEl) focusEl.focus();
+  }
+}
+
 /* ---------- boot ---------------------------------------- */
 initTheme();      // theme + logo first — never depends on 3D
 initSignup();
+initContact();    // in-page contact dialog
 initCursor();     // mouse-only, motion-safe
 initScene();      // async, decorative, isolated failure
