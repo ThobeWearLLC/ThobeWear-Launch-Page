@@ -533,22 +533,32 @@ function kitSubscribe(email) {
    CONTACT_ENDPOINT via fetch and shows a success state inline.
    =========================================================== */
 
-/* Where contact messages are delivered. Easiest: a free Formspree form
-   (https://formspree.io) — create one and paste its endpoint here, e.g.
-   "https://formspree.io/f/abcdwxyz". It accepts JSON and replies with JSON,
-   so the visitor never leaves the page. (Our Cloudflare Worker could also
-   serve this if extended.) Blank = not wired yet. */
-const CONTACT_ENDPOINT = "";
+/* Contact messages are delivered via Web3Forms (https://web3forms.com): a
+   headless endpoint that emails the submission to the address tied to this
+   access key. The form's look is entirely ours — Web3Forms only delivers.
+   The access key is meant to be public (client-side); it can only send mail to
+   the registered inbox, and Web3Forms applies its own spam protection. */
+const CONTACT_ENDPOINT = "https://api.web3forms.com/submit";
+const CONTACT_ACCESS_KEY = "2874e908-db09-4a2c-8fe7-50e03dd72ecb";
 
 async function sendContact(payload) {
-  if (!CONTACT_ENDPOINT) throw new Error("not_configured");
+  if (!CONTACT_ENDPOINT || !CONTACT_ACCESS_KEY) throw new Error("not_configured");
   if (!navigator.onLine) throw new Error("offline");
   const res = await fetch(CONTACT_ENDPOINT, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      access_key: CONTACT_ACCESS_KEY,
+      subject: "New message from thobewear.com",
+      from_name: "ThobeWear Website",
+      name: payload.name,
+      email: payload.email,
+      message: payload.message,
+    }),
   });
-  if (!res.ok) throw new Error("send_failed");
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok || !data.success) throw new Error("send_failed");
 }
 
 function initContact() {
