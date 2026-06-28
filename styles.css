@@ -528,11 +528,14 @@ body {
   border: 1px solid var(--border-strong);
   border-radius: 18px;
   padding: 0;
-  background: var(--surface);
+  /* Near-opaque (not the translucent --surface): the modal floats over a dark
+     dimming backdrop, so a see-through panel would look muddy gray. */
+  background: rgba(22, 22, 24, 0.97);
   color: var(--text);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 30px 80px -32px rgba(0, 0, 0, 0.7);
+}
+:root[data-theme="light"] .modal {
+  background: rgba(248, 244, 236, 0.98); /* warm near-solid cream */
 }
 .modal::backdrop {
   background: rgba(8, 8, 10, 0.62);
